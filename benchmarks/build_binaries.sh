@@ -14,6 +14,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DATAFUSION_DIR=${DATAFUSION_DIR:-$SCRIPT_DIR/..}
 BUILD_DIR=${BUILD_DIR:-$SCRIPT_DIR/bin}
 PROFILE=${PROFILE:-release}
+DEBUG_INFO=${DEBUG_INFO:-1}  # Enable debug info by default for coredump analysis
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}🔨 Building ClickBench Benchmark Binaries${NC}"
@@ -21,6 +22,7 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo -e "  ${YELLOW}DataFusion Dir:${NC} ${DATAFUSION_DIR}"
 echo -e "  ${YELLOW}Build Profile:${NC}  ${PROFILE}"
+echo -e "  ${YELLOW}Debug Info:${NC}     ${DEBUG_INFO} (for coredump analysis)"
 echo -e "  ${YELLOW}Output Dir:${NC}     ${BUILD_DIR}"
 echo ""
 
@@ -32,6 +34,13 @@ cd "${DATAFUSION_DIR}/benchmarks"
 
 # Build the dfbench binary (contains clickbench benchmark)
 echo -e "${GREEN}📦 Building dfbench binary...${NC}"
+
+# Set RUSTFLAGS to include debug info
+if [ "${DEBUG_INFO}" = "1" ]; then
+    export RUSTFLAGS="-C debuginfo=2"
+    echo -e "${YELLOW}ℹ️  Debug info enabled (RUSTFLAGS=-C debuginfo=2)${NC}"
+fi
+
 if [ "${PROFILE}" = "release" ]; then
     cargo build --release --bin dfbench
     BINARY_PATH="${DATAFUSION_DIR}/target/release/dfbench"
@@ -46,12 +55,20 @@ cp "${BINARY_PATH}" "${BUILD_DIR}/dfbench"
 
 # Get binary info
 BINARY_SIZE=$(ls -lh "${BUILD_DIR}/dfbench" | awk '{print $5}')
+HAS_DEBUG=$(file "${BUILD_DIR}/dfbench" | grep -q "not stripped" && echo "Yes" || echo "No")
+
 echo ""
 echo -e "${GREEN}✅ Build complete!${NC}"
-echo -e "  ${YELLOW}Binary:${NC} ${BUILD_DIR}/dfbench"
-echo -e "  ${YELLOW}Size:${NC}   ${BINARY_SIZE}"
+echo -e "  ${YELLOW}Binary:${NC}      ${BUILD_DIR}/dfbench"
+echo -e "  ${YELLOW}Size:${NC}        ${BINARY_SIZE}"
+echo -e "  ${YELLOW}Debug Info:${NC}  ${HAS_DEBUG}"
 echo ""
 echo -e "${BLUE}📤 Next steps:${NC}"
 echo -e "  1. Use ${YELLOW}deploy.sh${NC} to upload to remote server"
 echo -e "  2. Run ${YELLOW}clickbench.sh${NC} on the remote server with ${YELLOW}USE_PREBUILT=1${NC}"
+echo ""
+echo -e "${YELLOW}💡 Tips:${NC}"
+echo -e "  - Debug info is included for coredump analysis with GDB"
+echo -e "  - To disable debug info: ${YELLOW}DEBUG_INFO=0 ./build_binaries.sh${NC}"
+echo -e "  - Binary will be larger with debug info but provides better crash analysis"
 echo ""

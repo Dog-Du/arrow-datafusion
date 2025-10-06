@@ -31,9 +31,10 @@ cd benchmarks
 ```
 
 **What it does:**
-- Compiles the `dfbench` binary in release mode
+- Compiles the `dfbench` binary in release mode **with debug info**
+- Debug symbols included for coredump analysis
 - Outputs the binary to `benchmarks/bin/dfbench`
-- Shows binary size and location
+- Shows binary size and debug info status
 
 **Output:**
 ```
@@ -43,15 +44,25 @@ cd benchmarks
 
   DataFusion Dir: /path/to/datafusion
   Build Profile:  release
+  Debug Info:     1 (for coredump analysis)
   Output Dir:     /path/to/benchmarks/bin
 
 📦 Building dfbench binary...
+ℹ️  Debug info enabled (RUSTFLAGS=-C debuginfo=2)
 📋 Copying binary to /path/to/benchmarks/bin/
 
 ✅ Build complete!
-  Binary: /path/to/benchmarks/bin/dfbench
-  Size:   45M
+  Binary:      /path/to/benchmarks/bin/dfbench
+  Size:        65M
+  Debug Info:  Yes
+
+💡 Tips:
+  - Debug info is included for coredump analysis with GDB
+  - To disable debug info: DEBUG_INFO=0 ./build_binaries.sh
+  - Binary will be larger with debug info but provides better crash analysis
 ```
+
+**Note:** Binary size will be larger (~20-40MB more) with debug info, but this is essential for meaningful crash analysis.
 
 ### Step 2: Deploy and Run on Remote Server
 
