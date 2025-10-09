@@ -88,9 +88,17 @@ print_section() {
 
 # Execute command and also print it, for debugging purposes
 debug_run() {
-    echo -e "${CYAN}${RUNNING} Executing: $@${NC}"
+    local env_vars=()
+
+    # 收集所有环境变量设置
+    while [[ "$1" == *=* ]]; do
+        env_vars+=("$1")
+        shift
+    done
+
+    echo -e "${CYAN}${RUNNING} Executing: ${env_vars[@]} $@${NC}"
     set -x
-    "$@"
+    env ${env_vars[@]} "$@"
     set +x
 }
 
@@ -112,7 +120,7 @@ if [ "$USE_PREBUILT" = "1" ]; then
     CARGO_COMMAND="$PREBUILT_BIN"
     print_info "Using prebuilt binary: $PREBUILT_BIN"
 else
-    CARGO_COMMAND=${CARGO_COMMAND:-"cargo run --release"}
+    CARGO_COMMAND=${CARGO_COMMAND:-"cargo run"}
 fi
 
 VIRTUAL_ENV=${VIRTUAL_ENV:-$SCRIPT_DIR/venv}

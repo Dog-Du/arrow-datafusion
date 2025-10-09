@@ -20,6 +20,7 @@ use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 use crate::util::{print_memory_stats, BenchmarkRun, CommonOpt, QueryResult};
+use chrono::{DateTime, Utc};
 use datafusion::logical_expr::{ExplainFormat, ExplainOption};
 use datafusion::{
     error::{DataFusionError, Result},
@@ -185,13 +186,17 @@ impl RunOpt {
         let mut query_results = vec![];
         for i in 0..self.iterations() {
             let start = Instant::now();
+            let start_time: DateTime<Utc> = Utc::now();
+            let start_time = start_time.format("%H:%M:%S%.3f").to_string();
             let results = ctx.sql(sql).await?.collect().await?;
+            let end_time: DateTime<Utc> = Utc::now();
+            let end_time = end_time.format("%H:%M:%S%.3f").to_string();
             let elapsed = start.elapsed();
             let ms = elapsed.as_secs_f64() * 1000.0;
             millis.push(ms);
             let row_count: usize = results.iter().map(|b| b.num_rows()).sum();
             println!(
-                "Query {query_id} iteration {i} took {ms:.1} ms and returned {row_count} rows"
+                "Query {query_id} iteration {i} {start_time} -> {end_time} took {ms:.1} ms and returned {row_count} rows"
             );
             query_results.push(QueryResult { elapsed, row_count })
         }

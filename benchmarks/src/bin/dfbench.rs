@@ -20,18 +20,13 @@ use datafusion::error::Result;
 
 use structopt::StructOpt;
 
-#[cfg(all(feature = "snmalloc", feature = "mimalloc"))]
-compile_error!(
-    "feature \"snmalloc\" and feature \"mimalloc\" cannot be enabled at the same time"
-);
+#[export_name = "malloc_conf"]
+pub static malloc_conf: &[u8] = b"stats_print:true,prof:true,prof_active:true,prof_gdump:true,lg_prof_interval:16,lg_prof_sample:10000,prof_prefix:./jeprof-heap/jeprof\0";
 
-#[cfg(feature = "snmalloc")]
-#[global_allocator]
-static ALLOC: snmalloc_rs::SnMalloc = snmalloc_rs::SnMalloc;
+use tikv_jemallocator::Jemalloc;
 
-#[cfg(feature = "mimalloc")]
 #[global_allocator]
-static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
+static GLOBAL: Jemalloc = Jemalloc;
 
 use datafusion_benchmarks::{
     cancellation, clickbench, h2o, hj, imdb, nlj, sort_tpch, tpch,
